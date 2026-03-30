@@ -3,11 +3,12 @@
 import { useEffect } from "react";
 import { ChessBoard } from "@/components/ChessBoard";
 import { GameControls } from "@/components/GameControls";
-import { MoveHistory } from "@/components/MoveHistory";
+import { GameStatusDisplay } from "@/components/GameStatusDisplay";
+import { CheckmateModal } from "@/components/CheckmateModal";
 import { useGameStore } from "@/store/useGameStore";
 
 export default function GamePage() {
-  const { historySan, aiThinking, tickClock, makeAIMove } = useGameStore();
+  const { aiThinking, tickClock, makeAIMove } = useGameStore();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -32,10 +33,13 @@ export default function GamePage() {
       <div className="grid gap-5 lg:grid-cols-[minmax(320px,600px)_minmax(280px,1fr)] lg:items-start">
         <ChessBoard />
         <div className="space-y-5">
+          <GameStatusDisplay />
           <GameControls />
-          <MoveHistory moves={historySan} />
         </div>
       </div>
+
+      {/* Checkmate modal with confetti */}
+      <CheckmateModal />
     </main>
   );
 }

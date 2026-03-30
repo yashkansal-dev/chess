@@ -186,9 +186,15 @@ export const useGameStore = create<GameStore>()(
       undoMove: () => {
         const state = get();
         const chess = new Chess(state.fen);
-        const undone = chess.undo();
 
-        if (!undone) return;
+        // In AI mode, undo both AI move and player move (2 undos)
+        // In PvP mode, undo only 1 move
+        const undosNeeded = state.mode === "ai" ? 2 : 1;
+
+        for (let i = 0; i < undosNeeded; i++) {
+          const undone = chess.undo();
+          if (!undone) break;
+        }
 
         set({
           ...toSnapshot(chess),
@@ -348,12 +354,31 @@ export const useGameStore = create<GameStore>()(
       onRehydrateStorage: () => (state) => {
         if (!state) return;
 
+        // Validate that stored moves can be replayed from the starting position
+        try {
+          const validationChess = new Chess();
+          for (const san of state.historySan || []) {
+            const move = validationChess.move(san);
+            if (!move) {
+              // Invalid move found - reset history to empty
+              state.historySan = [];
+              break;
+            }
+          }
+        } catch {
+          // Error during move replay - reset history to be safe
+          state.historySan = [];
+        }
+
         const chess = new Chess(state.fen);
         const snapshot = toSnapshot(chess);
 
         state.fen = snapshot.fen;
         state.pgn = snapshot.pgn;
-        state.historySan = snapshot.historySan;
+        // If history was cleared due to validation, use snapshot history
+        if (!state.historySan.length) {
+          state.historySan = snapshot.historySan;
+        }
         state.turn = snapshot.turn;
         state.statusLabel = snapshot.statusLabel;
         state.isGameOver = snapshot.isGameOver;

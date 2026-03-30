@@ -8,9 +8,6 @@ export function GameControls() {
     gameStarted,
     mode,
     turn,
-    statusLabel,
-    isGameOver,
-    winner,
     aiThinking,
     timerPreset,
     clock,
@@ -29,16 +26,10 @@ export function GameControls() {
   return (
     <section className="space-y-5 rounded-2xl border border-slate-200/90 bg-white/75 p-5 shadow-sm backdrop-blur-lg transition duration-200 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900/55">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Game Info</p>
-        <p className="mt-1 text-sm font-medium text-slate-700 dark:text-slate-200">{statusLabel}</p>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          Turn: <span className="font-semibold">{turn === "w" ? "White" : "Black"}</span>
-          {isGameOver && winner ? (
-            <span className="ml-2 rounded bg-emerald-100 px-2 py-0.5 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-              Winner: {winner}
-            </span>
-          ) : null}
-        </p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Turn Indicator</p>
+        <div className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+          Current Turn: {turn === "w" ? "White ♔" : "Black ♚"}
+        </div>
       </div>
 
       <div>
