@@ -32,6 +32,7 @@ interface ClockState {
 }
 
 interface GameState {
+  gameStarted: boolean;
   mode: GameMode;
   aiColor: Color;
   aiDepth: number;
@@ -55,6 +56,8 @@ interface GameState {
 
 interface GameActions {
   setMode: (mode: GameMode) => void;
+  startGame: () => void;
+  newGame: () => void;
   restart: () => void;
   undoMove: () => void;
   flipBoard: () => void;
@@ -98,6 +101,7 @@ function defaultState(): Omit<GameStore, keyof GameActions> {
   const timerPreset: TimerPreset = "blitz";
 
   return {
+    gameStarted: false,
     mode: "pvp",
     aiColor: "b",
     aiDepth: 2,
@@ -120,8 +124,48 @@ export const useGameStore = create<GameStore>()(
       ...defaultState(),
 
       setMode: (mode) => {
-        set({ mode });
-        get().restart();
+        const state = get();
+        if (state.gameStarted) return;
+
+        const chess = createFreshChess();
+        set({
+          mode,
+          ...toSnapshot(chess),
+          pendingPromotion: null,
+          aiThinking: false,
+          lastMove: null,
+          clock: getClockByPreset(state.timerPreset),
+          gameStarted: false,
+          statusLabel: "Ready to start",
+        });
+      },
+
+      startGame: () => {
+        const state = get();
+        const chess = createFreshChess();
+        set({
+          ...toSnapshot(chess),
+          pendingPromotion: null,
+          aiThinking: false,
+          lastMove: null,
+          clock: getClockByPreset(state.timerPreset),
+          gameStarted: true,
+          statusLabel: "Game started",
+        });
+      },
+
+      newGame: () => {
+        const state = get();
+        const chess = createFreshChess();
+        set({
+          ...toSnapshot(chess),
+          pendingPromotion: null,
+          aiThinking: false,
+          lastMove: null,
+          clock: getClockByPreset(state.timerPreset),
+          gameStarted: false,
+          statusLabel: "Select a mode and press Start Game",
+        });
       },
 
       restart: () => {
@@ -134,6 +178,8 @@ export const useGameStore = create<GameStore>()(
           aiThinking: false,
           lastMove: null,
           clock: getClockByPreset(state.timerPreset),
+          gameStarted: true,
+          statusLabel: "Game restarted",
         });
       },
 
@@ -162,6 +208,7 @@ export const useGameStore = create<GameStore>()(
         const state = get();
         const chess = new Chess(state.fen);
 
+        if (!state.gameStarted) return { ok: false };
         if (state.isGameOver) return { ok: false };
 
         if (!promotion && isPromotionMove(chess, from, to)) {
@@ -197,7 +244,7 @@ export const useGameStore = create<GameStore>()(
 
       makeAIMove: async () => {
         const pre = get();
-        if (pre.mode !== "ai" || !pre.aiThinking || pre.isGameOver) return;
+        if (!pre.gameStarted || pre.mode !== "ai" || !pre.aiThinking || pre.isGameOver) return;
 
         await new Promise((resolve) => setTimeout(resolve, 450));
 
@@ -229,7 +276,7 @@ export const useGameStore = create<GameStore>()(
       tickClock: () => {
         const state = get();
 
-        if (state.isGameOver || state.historySan.length === 0) return;
+        if (!state.gameStarted || state.isGameOver || state.historySan.length === 0) return;
 
         const key = state.turn === "w" ? "white" : "black";
         const next = state.clock[key] - 1;
@@ -280,6 +327,7 @@ export const useGameStore = create<GameStore>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         mode: state.mode,
+        gameStarted: state.gameStarted,
         aiColor: state.aiColor,
         aiDepth: state.aiDepth,
         fen: state.fen,
@@ -312,6 +360,9 @@ export const useGameStore = create<GameStore>()(
         state.winner = snapshot.winner;
         state.pendingPromotion = null;
         state.aiThinking = false;
+        if (!state.gameStarted && state.historySan.length === 0) {
+          state.statusLabel = "Select a mode and press Start Game";
+        }
       },
     },
   ),

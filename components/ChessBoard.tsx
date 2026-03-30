@@ -17,6 +17,7 @@ function promotionLabel(piece: PromotionPiece): string {
 
 export function ChessBoard() {
   const {
+    gameStarted,
     fen,
     orientation,
     turn,
@@ -128,7 +129,7 @@ export function ChessBoard() {
   };
 
   const onSquareClick = (squareName: Square) => {
-    if (isGameOver || aiThinking || pendingPromotion) return;
+    if (!gameStarted || isGameOver || aiThinking || pendingPromotion) return;
 
     const chess = new Chess(fen);
 
@@ -157,7 +158,7 @@ export function ChessBoard() {
           position: fen,
           boardOrientation: orientation,
           boardStyle: { width: `${boardWidth}px`, maxWidth: "100%" },
-          allowDragging: !isGameOver && !aiThinking && !pendingPromotion,
+          allowDragging: gameStarted && !isGameOver && !aiThinking && !pendingPromotion,
           onPieceDrop: ({ sourceSquare, targetSquare }) => {
             if (!targetSquare) return false;
             return tryMove(sourceSquare as Square, targetSquare as Square);
@@ -168,6 +169,14 @@ export function ChessBoard() {
           showAnimations: true,
         }}
       />
+
+      {!gameStarted ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-slate-950/35 p-4 text-center backdrop-blur-[2px]">
+          <div className="rounded-xl bg-white/90 px-4 py-3 text-sm font-semibold text-slate-700 shadow-md dark:bg-slate-900/90 dark:text-slate-200">
+            Select a mode and press Start Game to begin.
+          </div>
+        </div>
+      ) : null}
 
       {pendingPromotion ? (
         <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-black/45 p-4">
